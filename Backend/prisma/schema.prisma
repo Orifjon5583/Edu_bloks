@@ -1,0 +1,291 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles enum
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  STUDENT
+}
+
+// Assignment types enum
+enum AssignmentType {
+  QUIZ
+  SCRATCH_BLOCKS
+  PYTHON_BLOCKS
+}
+
+// Assignment status enum
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// Block mode enum
+enum BlockMode {
+  ORDER
+  FILL_GAPS
+  FIX_BUG
+}
+
+// Audit action types enum
+enum AuditAction {
+  USER_CREATE
+  USER_UPDATE
+  USER_DELETE
+  USER_PASSWORD_RESET
+  GROUP_CREATE
+  GROUP_UPDATE
+  GROUP_DELETE
+  ASSIGNMENT_CREATE
+  ASSIGNMENT_UPDATE
+  ASSIGNMENT_DELETE
+  ASSIGNMENT_PUBLISH
+  LOGIN
+  LOGOUT
+}
+
+// Student assignment status enum
+enum StudentAssignmentStatus {
+  NEW
+  IN_PROGRESS
+  SUBMITTED
+  PASSED
+  FAILED
+  OVERDUE
+}
+
+// User model
+model User {
+  id        String   @id @default(uuid())
+  login     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      UserRole
+  
+  // Relations
+  groupId   String?
+  group     Group?   @relation("StudentGroup", fields: [groupId], references: [id], onDelete: SetNull)
+  
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  
+  // Teacher relations
+  teacherGroups Group[] @relation("TeacherGroups")
+  
+  // Assignment relations
+  createdAssignments Assignment[]
+  directlyAssignedAssignments Assignment[] @relation("DirectlyAssignedStudents")
+  studentAssignments StudentAssignment[]
+  submissions        Submission[]
+  // Gamification properties
+  xp        Int      @default(0)
+  level     Int      @default(1)
+  badges    UserBadge[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([login])
+  @@index([role])
+  @@index([branchId])
+  @@index([groupId])
+  // Index for leaderboard
+  @@index([xp(sort: Desc)])
+  @@map("users")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  icon        String   // Emoji or icon name
+  xpReward    Int      @default(0)
+  condition   String   // Internal code for connection: FIRST_WIN, SPEED_RUN, etc.
+  
+  users       UserBadge[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  earnedAt  DateTime @default(now())
+  
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// Branch model
+model Branch {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  
+  groups    Group[]
+  users     User[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("branches")
+}
+
+// Group model
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  
+  teacherId String
+  teacher   User     @relation("TeacherGroups", fields: [teacherId], references: [id], onDelete: Restrict)
+  
+  branchId  String?
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  
+  students  User[]   @relation("StudentGroup")
+  assignments Assignment[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([teacherId])
+  @@map("groups")
+}
+
+// Assignment model
+model Assignment {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  type        AssignmentType
+  status      AssignmentStatus @default(DRAFT)
+  
+  isPublic    Boolean          @default(false)
+  tags        String[]
+  
+  // Content stored as JSON
+  content     Json
+  
+  createdById String
+  createdBy   User             @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  // Many-to-many with groups
+  groups      Group[]
+  
+  // Many-to-many with students (direct assignment)
+  assignedStudents User[] @relation("DirectlyAssignedStudents")
+  
+  dueAt       DateTime
+  
+  studentAssignments StudentAssignment[]
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  @@index([createdById])
+  @@index([status])
+  @@index([dueAt])
+  @@map("assignments")
+}
+
+// Student Assignment (junction table with status)
+model StudentAssignment {
+  id           String                  @id @default(uuid())
+  
+  assignmentId String
+  assignment   Assignment              @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  
+  studentId    String
+  student      User                    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  status       StudentAssignmentStatus @default(NEW)
+  bestScore    Int?
+  attempts     Int                     @default(0)
+  isLate       Boolean                 @default(false)
+  
+  feedback     String?                 @db.Text
+
+  submissions  Submission[]
+  
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+  @@index([assignmentId])
+  @@map("student_assignments")
+}
+
+// Submission model
+model Submission {
+  id                  String            @id @default(uuid())
+  
+  studentAssignmentId String
+  studentAssignment   StudentAssignment @relation(fields: [studentAssignmentId], references: [id], onDelete: Cascade)
+  
+  assignmentId        String
+  studentId           String
+  student             User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  attemptNo           Int
+  score               Int
+  maxScore            Int
+  isLate              Boolean           @default(false)
+  
+  // Answers stored as JSON
+  answers             Json
+  
+  submittedAt         DateTime          @default(now())
+  
+  @@index([studentAssignmentId])
+  @@index([studentId])
+  @@index([assignmentId])
+  @@map("submissions")
+}
+
+// AuditLog model for tracking critical actions
+model AuditLog {
+  id          String      @id @default(uuid())
+  action      AuditAction
+  
+  // Who performed the action
+  actorId     String
+  actorRole   String
+  
+  // What entity was affected
+  entityType  String
+  entityId    String?
+  
+  // Additional context as JSON
+  metadata    Json?
+  
+  // IP and user agent for security
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime    @default(now())
+  
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
