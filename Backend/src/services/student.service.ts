@@ -75,7 +75,7 @@ export class StudentService {
         return studentAssignment;
     }
 
-    async submitAssignment(userId: string, assignmentId: string, answers: any) {
+    async submitAssignment(userId: string, assignmentId: string, answers: any, cheatWarnings: number = 0) {
         const studentAssignment = await prisma.studentAssignment.findFirst({
             where: {
                 assignmentId,
@@ -86,6 +86,10 @@ export class StudentService {
 
         if (!studentAssignment) {
             throw new Error('Assignment not found');
+        }
+
+        if (studentAssignment.attempts >= 2) {
+            throw new Error('Maximum attempts reached');
         }
 
         // Calculate score
@@ -104,6 +108,7 @@ export class StudentService {
                 maxScore,
                 isLate,
                 answers,
+                cheatWarnings,
             },
         });
 
@@ -119,6 +124,7 @@ export class StudentService {
                 bestScore: newBestScore,
                 attempts: studentAssignment.attempts + 1,
                 isLate: isLate || studentAssignment.isLate,
+                cheatWarnings: studentAssignment.cheatWarnings + cheatWarnings,
             },
         });
 

@@ -34,11 +34,22 @@ export default function QuizExecution({ questions, answers, onAnswerChange }: Qu
                     {isAnswered ? <CheckCircle2 className="w-4 h-4" /> : qIndex + 1}
                   </div>
 
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium mb-1">{question.question}</h3>
-                    <span className="text-sm text-muted-foreground">
-                      {question.points} {question.points === 1 ? 'ball' : 'ball'}
-                    </span>
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <h3 className="text-lg font-medium mb-1">{question.question}</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {question.points} {question.points === 1 ? 'ball' : 'ball'}
+                      </span>
+                    </div>
+                    {question.questionImage && (
+                      <div className="mt-2">
+                        <img 
+                          src={question.questionImage} 
+                          alt="Savol rasmi" 
+                          className="max-w-full max-h-64 object-contain rounded-md border shadow-sm"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -47,26 +58,38 @@ export default function QuizExecution({ questions, answers, onAnswerChange }: Qu
                   onValueChange={(value) => onAnswerChange(question.id, parseInt(value))}
                   className="ml-12 space-y-3"
                 >
-                  {question.options.map((option, oIndex) => (
-                    <motion.div
-                      key={oIndex}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === oIndex
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                        }`}
-                      onClick={() => onAnswerChange(question.id, oIndex)}
-                    >
-                      <RadioGroupItem value={oIndex.toString()} id={`${question.id}-${oIndex}`} />
-                      <Label
-                        htmlFor={`${question.id}-${oIndex}`}
-                        className="flex-1 cursor-pointer font-normal"
+                  {question.options.map((option, oIndex) => {
+                    const optImage = question.optionImages?.[oIndex];
+                    return (
+                      <motion.div
+                        key={oIndex}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === oIndex
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }`}
+                        onClick={() => onAnswerChange(question.id, oIndex)}
                       >
-                        {option}
-                      </Label>
-                    </motion.div>
-                  ))}
+                        <div className="pt-1">
+                          <RadioGroupItem value={oIndex.toString()} id={`${question.id}-${oIndex}`} />
+                        </div>
+                        <Label
+                          htmlFor={`${question.id}-${oIndex}`}
+                          className="flex-1 cursor-pointer font-normal"
+                        >
+                          {option && <div className="mb-2 text-base">{option}</div>}
+                          {optImage && (
+                            <img 
+                              src={optImage} 
+                              alt={`Variant ${oIndex + 1}`} 
+                              className="max-w-full max-h-48 object-contain rounded-md border bg-white shadow-sm" 
+                            />
+                          )}
+                        </Label>
+                      </motion.div>
+                    );
+                  })}
                 </RadioGroup>
               </CardContent>
             </Card>

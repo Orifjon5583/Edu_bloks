@@ -55,6 +55,10 @@ export default function AssignmentExecution() {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{ score: number; maxScore: number; passed: boolean } | null>(null);
 
+  // Anti-cheat states
+  const [cheatWarnings, setCheatWarnings] = useState(0);
+  const [isBlurred, setIsBlurred] = useState(false);
+
   // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
 
@@ -98,8 +102,49 @@ export default function AssignmentExecution() {
         }
       }
     }
-  }, [assignment]);
+  }, [assignment, studentAssignment]);
 
+  // Anti-cheat effect
+  useEffect(() => {
+    if (submitted) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setCheatWarnings(prev => prev + 1);
+        setIsBlurred(true);
+        toast.error("Qoida buzilishi!", { description: "Siz test vaqtida boshqa oynaga o'tdingiz. Bu qoida buzilishi hisoblanadi." });
+      } else {
+        setIsBlurred(false);
+      }
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      setCheatWarnings(prev => prev + 1);
+      toast.error("Qoida buzilishi!", { description: "Sichqonchaning o'ng tugmasini bosish taqiqlangan." });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === 'PrintScreen' || 
+        (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 's' || e.key === 'S' || e.key === 'p' || e.key === 'P'))
+      ) {
+        e.preventDefault();
+        setCheatWarnings(prev => prev + 1);
+        toast.error("Qoida buzilishi!", { description: "Siz taqiqlangan tugmalarni bosdingiz." });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [submitted]);
 
   const handleQuizSubmit = () => {
     if (!assignment || assignment.type !== 'QUIZ' || !id) return;
@@ -111,7 +156,8 @@ export default function AssignmentExecution() {
 
     submitMutation.mutate({
       assignmentId: assignment.id,
-      answers: formattedAnswers
+      answers: formattedAnswers,
+      cheatWarnings
     });
   };
 
@@ -128,13 +174,15 @@ export default function AssignmentExecution() {
 
       submitMutation.mutate({
         assignmentId: assignment.id,
-        answers: { tasks: tasksAnswers }
+        answers: { tasks: tasksAnswers },
+        cheatWarnings
       });
     } else {
       // Legacy submission
       submitMutation.mutate({
         assignmentId: assignment.id,
-        answers: { sequence: taskSequences['legacy'] || [] }
+        answers: { sequence: taskSequences['legacy'] || [] },
+        cheatWarnings
       });
     }
   };
@@ -144,6 +192,7 @@ export default function AssignmentExecution() {
     setResult(null);
     setQuizAnswers({});
     setCurrentTaskIndex(0);
+    setCheatWarnings(0);
 
     if (assignment?.type === 'SCRATCH_BLOCKS' || assignment?.type === 'PYTHON_BLOCKS') {
       // Re-shuffle
@@ -343,10 +392,12 @@ export default function AssignmentExecution() {
                   </p>
 
                   <div className="flex items-center justify-center gap-4">
-                    <Button variant="outline" onClick={handleRetry}>
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      Qayta urinish
-                    </Button>
+                    {(studentAssignment?.attempts || 0) < 2 && (
+                      <Button variant="outline" onClick={handleRetry}>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Qayta urinish
+                      </Button>
+                    )}
                     <Button onClick={() => navigate('/student/dashboard')}>
                       Vazifalarga
                     </Button>
@@ -359,7 +410,7 @@ export default function AssignmentExecution() {
 
         {/* Assignment Content */}
         {!submitted && (
-          <>
+          <div className={isBlurred ? "filter blur-md select-none pointer-events-none transition-all duration-300" : "transition-all duration-300"}>
             {assignment.type === 'QUIZ' && quizContent && (
               <QuizExecution
                 questions={quizContent.questions}
@@ -423,7 +474,7 @@ export default function AssignmentExecution() {
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </DashboardLayout>

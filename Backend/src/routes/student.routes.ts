@@ -38,10 +38,10 @@ router.get('/assignments/:id', authenticate, requireRole('STUDENT'), async (req:
 // Submit assignment
 router.post('/submissions', authenticate, requireRole('STUDENT'), validateBody(submitAssignmentSchema), async (req: AuthRequest, res) => {
     try {
-        const { assignmentId, answers } = req.body;
+        const { assignmentId, answers, cheatWarnings } = req.body;
         const { userId } = req.user!;
 
-        const submission = await studentService.submitAssignment(userId, assignmentId, answers);
+        const submission = await studentService.submitAssignment(userId, assignmentId, answers, cheatWarnings || 0);
         return res.status(201).json(submission);
     } catch (error: any) {
         if (error.message === 'Missing required fields') {

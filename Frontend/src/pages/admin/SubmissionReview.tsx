@@ -145,6 +145,7 @@ export default function SubmissionReview() {
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Urinishlar</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ball / 100</th>
+                                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Qoida buzishlar</th>
                                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Harakatlar</th>
                                     </tr>
                                 </thead>
@@ -174,6 +175,13 @@ export default function SubmissionReview() {
                                                 </td>
                                                 <td className="p-4 align-middle font-bold">
                                                     {item.bestScore !== null ? item.bestScore : '-'}
+                                                </td>
+                                                <td className="p-4 align-middle text-center">
+                                                    {item.cheatWarnings > 0 ? (
+                                                        <Badge variant="destructive">{item.cheatWarnings} marta</Badge>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4 align-middle">
                                                     <Button

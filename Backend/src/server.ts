@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import path from 'path';
 import { logger } from './utils/logger';
 
 // Load environment variables
@@ -20,6 +21,7 @@ import assignmentRoutes from './routes/assignment.routes';
 import studentRoutes from './routes/student.routes';
 import statsRoutes from './routes/stats.routes';
 import gamificationRoutes from './routes/gamification.routes';
+import uploadRoutes from './routes/upload.routes';
 
 // Import middleware
 import { errorHandler } from './middleware/error.middleware';
@@ -60,6 +62,7 @@ const apiLimiter = rateLimit({
 app.use(helmet({
     contentSecurityPolicy: false, // Disabled for SPA - frontend handles CSP
     crossOriginEmbedderPolicy: false, // Allow loading external resources
+    crossOriginResourcePolicy: false, // Allow loading images from different port
 }));
 
 // CORS configuration
@@ -68,8 +71,11 @@ app.use(cors({
     credentials: true,
 }));
 app.use(cookieParser()); // Parse cookies
-app.use(express.json({ limit: '10mb' })); // Limit payload size
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' })); // Limit payload size
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -92,6 +98,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/gamification', gamificationRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api', statsRoutes);
 
 // 404 handler

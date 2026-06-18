@@ -5,6 +5,7 @@ export interface SubmitAssignmentData {
     assignmentId: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     answers: any;
+    cheatWarnings?: number;
 }
 
 export const studentApi = {

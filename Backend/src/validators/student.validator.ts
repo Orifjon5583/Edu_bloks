@@ -19,6 +19,7 @@ export const submitAssignmentSchema = z.object({
         // Generic fallback
         z.any(),
     ]),
+    cheatWarnings: z.number().int().min(0).optional(),
 });
 
 /**

@@ -220,6 +220,7 @@ model StudentAssignment {
   bestScore    Int?
   attempts     Int                     @default(0)
   isLate       Boolean                 @default(false)
+  cheatWarnings Int                    @default(0)
   
   feedback     String?                 @db.Text
 
@@ -249,6 +250,7 @@ model Submission {
   score               Int
   maxScore            Int
   isLate              Boolean           @default(false)
+  cheatWarnings       Int               @default(0)
   
   // Answers stored as JSON
   answers             Json

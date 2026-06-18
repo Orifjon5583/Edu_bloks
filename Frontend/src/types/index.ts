@@ -116,7 +116,9 @@ export interface BlocksContent {
 export interface QuizQuestion {
   id: string;
   question: string;
+  questionImage?: string;
   options: string[];
+  optionImages?: string[];
   correctIndex: number;
   points: number;
 }
