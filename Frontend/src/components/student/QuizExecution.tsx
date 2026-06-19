@@ -25,8 +25,8 @@ export default function QuizExecution({ questions, answers, onAnswerChange }: Qu
             transition={{ delay: qIndex * 0.1 }}
           >
             <Card className={`transition-all ${isAnswered ? 'border-primary/30 bg-primary/5' : ''}`}>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start gap-3 sm:gap-4 mb-4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-medium text-sm ${isAnswered
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -56,7 +56,7 @@ export default function QuizExecution({ questions, answers, onAnswerChange }: Qu
                 <RadioGroup
                   value={answers[question.id]?.toString()}
                   onValueChange={(value) => onAnswerChange(question.id, parseInt(value))}
-                  className="ml-12 space-y-3"
+                  className="ml-0 sm:ml-12 space-y-3 mt-4 sm:mt-0"
                 >
                   {question.options.map((option, oIndex) => {
                     const optImage = question.optionImages?.[oIndex];
@@ -65,7 +65,7 @@ export default function QuizExecution({ questions, answers, onAnswerChange }: Qu
                         key={oIndex}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === oIndex
+                        className={`flex items-start gap-3 p-3 sm:p-4 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === oIndex
                             ? 'border-primary bg-primary/10'
                             : 'border-border hover:border-primary/50 hover:bg-muted/50'
                           }`}
