@@ -42,7 +42,9 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
 
     // Skip CSRF for auth endpoints (login has no prior CSRF token)
     const csrfExemptPaths = ['/api/auth/login', '/api/auth/logout', '/api/auth/generate-credentials', '/api/auth/generate-password'];
-    if (csrfExemptPaths.includes(req.path)) {
+    const pathToCheck = req.originalUrl ? req.originalUrl.split('?')[0] : req.path;
+    
+    if (csrfExemptPaths.includes(pathToCheck) || csrfExemptPaths.some(p => pathToCheck.startsWith(p))) {
         return next();
     }
 
