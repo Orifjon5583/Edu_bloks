@@ -12,7 +12,9 @@ const quizContentSchema = z.object({
     questions: z.array(z.object({
         id: z.string(),
         question: z.string().min(1, 'Question text is required'),
+        questionImage: z.string().optional(),
         options: z.array(z.string()).min(2, 'At least 2 options required'),
+        optionImages: z.array(z.string()).optional(),
         correctIndex: z.number().int().min(0),
         points: z.number().int().min(1).default(1),
     })).min(1, 'At least one question is required'),
