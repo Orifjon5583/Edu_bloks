@@ -11,9 +11,7 @@ export const uploadApi = {
       },
     });
 
-    // The backend returns { url: '/uploads/filename.ext' }
-    // We should return the full URL if we need it, but relative is fine if we use the backend URL
-    const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
-    return `${backendUrl}${response.data.url}`;
+    // Return relative URL so it works regardless of http/https or domain
+    return response.data.url;
   },
 };
